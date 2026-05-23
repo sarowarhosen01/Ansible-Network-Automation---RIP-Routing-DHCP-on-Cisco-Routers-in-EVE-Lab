@@ -71,7 +71,6 @@ This **enterprise-grade network automation** project demonstrates the power of *
 ## 🏗️ Network Architecture
 
 ### Physical Topology
-
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ MANAGEMENT NETWORK (OOB) │
@@ -99,25 +98,6 @@ This **enterprise-grade network automation** project demonstrates the power of *
 │ Access Ports Access Ports │ │
 │ to VLANs 10-50 to VLANs 10-50 │ │
 └─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Logical Diagram (R1 Side)
-
-```
-R1 Router
-│
-┌───────────────┼───────────────┐
-│ │ │
-┌────┴────┐ ┌────┴────┐ ┌────┴────┐
-│Gi0/0.10 │ │Gi0/0.20 │ │Gi0/0.30 │
-│VLAN 10 │ │VLAN 20 │ │VLAN 30 │
-│IT Dept │ │HR Dept │ │Finance │
-└────┬────┘ └────┬────┘ └────┬────┘
-│ │ │
-┌────┴────┐ ┌────┴────┐ ┌────┴────┐
-│DHCP Pool│ │DHCP Pool│ │DHCP Pool│
-│.5-.14 │ │.21-.30 │ │.37-.46 │
-└─────────┘ └─────────┘ └─────────┘
 ```
 
 
@@ -151,8 +131,6 @@ R1 Router
 ## 💻 Technical Stack
 
 ### Core Technologies
-
-
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ AUTOMATION LAYER │
@@ -183,7 +161,7 @@ R1 Router
 
 
 ### Dependencies
-```
+```yaml
 # requirements.yml
 collections:
   - name: cisco.ios
@@ -196,18 +174,154 @@ python_packages:
   - paramiko
   - netmiko
   - pyyaml
-
 ```
 
-## 📁 Project Structure
+### ⚡ Quick Start
+```
+# 1️⃣ Clone the repository
+git clone https://github.com/yourusername/ansible-galaxy-rip-automation.git
+cd ansible-galaxy-rip-automation
 
+# 2️⃣ Configure SSH for legacy Cisco devices (if needed)
+nano ~/.ssh/config
+# (paste SSH configuration from below)
+
+# 3️⃣ Install dependencies
+ansible-galaxy collection install -r requirements.yml
+
+# 4️⃣ Update inventory file with your device IPs
+nano host.ini
+
+# 5️⃣ Test connectivity
+ansible all -i host.ini -m ping
+
+# 6️⃣ Dry-run (safe check mode)
+ansible-playbook -i host.ini site.yml --check
+
+# 7️⃣ Apply configuration
+ansible-playbook -i host.ini site.yml
+```
+
+### 📥 Installation Guide
+
+## Prerequisites
+# 1. Ansible Control Node Setup
+
+```
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y python3-pip git
+pip3 install ansible
+
+# CentOS/RHEL
+sudo yum install -y epel-release
+sudo yum install -y ansible git
+
+# Verify installation
+ansible --version
+# Output: ansible 2.9.x or higher
+```
+
+# 2. Install Required Collections
+```
+# Create requirements.yml
+cat > requirements.yml << 'EOF'
+---
+collections:
+  - name: cisco.ios
+    version: ">=2.5.0"
+  - name: ansible.netcommon
+    version: ">=2.5.0"
+EOF
+
+# Install collections
+ansible-galaxy collection install -r requirements.yml
+```
+
+# 3. Configure SSH for Legacy Cisco Devices
+```
+# Create or edit SSH config file
+nano ~/.ssh/config
+
+Host 192.168.*.*
+    User admin
+    KexAlgorithms diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
+    HostKeyAlgorithms ssh-rsa
+    PubkeyAcceptedAlgorithms +ssh-rsa
+    Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,aes192-cbc,aes256-cbc,3des-cbc
+    MACs hmac-sha1,hmac-sha1-96
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+
+# Fix SSH Permissions:
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/config
+```
+
+4. Network Device Prerequisites
+```
+! On each router/switch
+configure terminal
+ip domain-name lab.local
+crypto key generate rsa modulus 2048
+ip ssh version 2
+username admin privilege 15 secret cisco123
+line vty 0 4
+ transport input ssh
+ login local
+exit
+enable secret cisco123
+interface gigabitethernet0/0
+ ip address 192.168.60.x 255.255.255.0
+ no shutdown
+end
+write memory
+```
+
+5. Create Ansible Inventory File
+```
+nano host.ini
+
+[routers]
+R1 ansible_host=192.168.60.11
+R2 ansible_host=192.168.60.12
+
+[switches]
+SW1 ansible_host=192.168.60.21
+SW3 ansible_host=192.168.60.22
+
+[cisco:children]
+routers
+switches
+
+[cisco:vars]
+ansible_connection=ansible.netcommon.network_cli
+ansible_network_os=cisco.ios.ios
+ansible_user=admin
+ansible_password=cisco123
+ansible_become=yes
+ansible_become_method=enable
+ansible_become_password=cisco123
+ansible_ssh_timeout=120
+ansible_command_timeout=120
+```
+
+# Test Connection
+```
+# Test basic connectivity
+ansible -i host.ini cisco -m ios_command -a "commands='show version'"
+
+# Expected output should show device information without errors
+```
+
+# 📁 Project Structure
 ```
 ansible-galaxy-rip-automation/
 │
 ├── 📄 host.ini                      # Inventory with device credentials
 ├── 📄 site.yml                      # Master playbook entry point
 ├── 📄 requirements.yml              # Galaxy collection dependencies
-├── 📄 README.md                     # This comprehensive guide
+├── 📄 README.md                     # Comprehensive documentation
 ├── 📄 .gitignore                    # Git ignore rules
 │
 ├── 📁 roles/
@@ -245,95 +359,29 @@ ansible-galaxy-rip-automation/
     └── 📄 test_playbook.yml
 ```
 
-
-# Configure SSH for Old Cisco Devices
-
-Some old Cisco routers and switches use legacy SSH algorithms that modern Linux systems block by default.
-
-Create or edit SSH config file:
-
-```bash
-nano ~/.ssh/config
+# 🚦 Running the Automation
 ```
+# Test connectivity to all devices
+ansible all -i host.ini -m ping
 
-Paste this configuration:
-
-```ssh
-Host 192.168.*.*
-    User admin
-    KexAlgorithms diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
-    HostKeyAlgorithms ssh-rsa
-    PubkeyAcceptedAlgorithms +ssh-rsa
-    Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,aes192-cbc,aes256-cbc,3des-cbc
-    MACs hmac-sha1,hmac-sha1-96
-    StrictHostKeyChecking no
-    UserKnownHostsFile /dev/null
-
-
-```
----
-#  Fix SSH Permissions
-
-```bash
-chmod 700 ~/.ssh
-chmod 600 ~/.ssh/config
-```
-
----
-
-
-# 6. Create Ansible Inventory File
-
-Create inventory file:
-
-```bash
-nano host.ini
-```
-
-Paste:
-
-```ini
-[cisco]
-SW1 ansible_host=<HOST_IP>
-
-[cisco:vars]
-ansible_connection=ansible.netcommon.network_cli
-ansible_network_os=cisco.ios.ios
-ansible_user=username
-ansible_password=password
-ansible_become=yes
-ansible_become_method=enable
-ansible_become_password=enable_password
-```
-
----
-
-# Example Inventory File
-
-```ini
-[cisco]
-SW1 ansible_host=192.168.10.11
-SW2 ansible_host=192.168.10.12
-
-[cisco:vars]
-ansible_connection=ansible.netcommon.network_cli
-ansible_network_os=cisco.ios.ios
-ansible_user=admin
-ansible_password=cisco123
-ansible_become=yes
-ansible_become_method=enable
-ansible_become_password=cisco123
-```
-
----
-
-# . Run Ansible Command
-
-Run Cisco command using Ansible:
-
-```bash
+# Run a single command on all devices
 ansible -i host.ini cisco -m ios_command -a "commands='show version'"
+
+# Run playbook with check mode (dry-run)
+ansible-playbook -i host.ini site.yml --check
+
+# Run playbook with verbose output
+ansible-playbook -i host.ini site.yml -v
+
+# Run playbook with extra verbosity (debug)
+ansible-playbook -i host.ini site.yml -vvv
+
+# Run playbook only on routers
+ansible-playbook -i host.ini site.yml --limit routers
+
+# Run playbook only on specific device
+ansible-playbook -i host.ini site.yml --limit R1
+
+# Run playbook and save output to file
+ansible-playbook -i host.ini site.yml | tee deployment.log
 ```
-
----
-
