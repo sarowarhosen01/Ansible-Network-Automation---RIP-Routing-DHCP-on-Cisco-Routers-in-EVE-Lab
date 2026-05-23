@@ -179,7 +179,7 @@ python_packages:
 ### ⚡ Quick Start
 ```
 # 1️⃣ Clone the repository
-git clone https://github.com/yourusername/ansible-galaxy-rip-automation.git
+git clone https://github.com/sarowarhosen01/Ansible-Network-Automation---RIP-Routing-DHCP-on-Cisco-Routers-in-EVE-Lab.git
 cd ansible-galaxy-rip-automation
 
 # 2️⃣ Configure SSH for legacy Cisco devices (if needed)
@@ -354,9 +354,9 @@ ansible-galaxy-rip-automation/
 │       │   └── 📄 main.yml          # Role metadata
 │       └── 📄 README.md             # Role documentation
 │
-└── 📁 tests/                        # Validation tests
-    ├── 📄 test_inventory.yml
-    └── 📄 test_playbook.yml
+└── 📁 screenshot/                        # Validation tests
+    ├── 
+    └──  screenshot.jpg
 ```
 
 # 🚦 Running the Automation
