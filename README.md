@@ -385,3 +385,6 @@ ansible-playbook -i host.ini site.yml --limit R1
 # Run playbook and save output to file
 ansible-playbook -i host.ini site.yml | tee deployment.log
 ```
+## Screenshots
+
+![App Screenshot](https://raw.githubusercontent.com/sarowarhosen01/Ansible-Network-Automation---RIP-Routing-DHCP-on-Cisco-Routers-in-EVE-Lab/refs/heads/main/screenshot/Screenshot.jpg)
