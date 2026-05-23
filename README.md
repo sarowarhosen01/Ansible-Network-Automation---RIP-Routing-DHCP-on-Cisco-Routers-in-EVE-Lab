@@ -244,3 +244,96 @@ ansible-galaxy-rip-automation/
     ├── 📄 test_inventory.yml
     └── 📄 test_playbook.yml
 ```
+
+
+# Configure SSH for Old Cisco Devices
+
+Some old Cisco routers and switches use legacy SSH algorithms that modern Linux systems block by default.
+
+Create or edit SSH config file:
+
+```bash
+nano ~/.ssh/config
+```
+
+Paste this configuration:
+
+```ssh
+Host 192.168.*.*
+    User admin
+    KexAlgorithms diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
+    HostKeyAlgorithms ssh-rsa
+    PubkeyAcceptedAlgorithms +ssh-rsa
+    Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,aes192-cbc,aes256-cbc,3des-cbc
+    MACs hmac-sha1,hmac-sha1-96
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+
+
+```
+---
+#  Fix SSH Permissions
+
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/config
+```
+
+---
+
+
+# 6. Create Ansible Inventory File
+
+Create inventory file:
+
+```bash
+nano host.ini
+```
+
+Paste:
+
+```ini
+[cisco]
+SW1 ansible_host=<HOST_IP>
+
+[cisco:vars]
+ansible_connection=ansible.netcommon.network_cli
+ansible_network_os=cisco.ios.ios
+ansible_user=username
+ansible_password=password
+ansible_become=yes
+ansible_become_method=enable
+ansible_become_password=enable_password
+```
+
+---
+
+# Example Inventory File
+
+```ini
+[cisco]
+SW1 ansible_host=192.168.10.11
+SW2 ansible_host=192.168.10.12
+
+[cisco:vars]
+ansible_connection=ansible.netcommon.network_cli
+ansible_network_os=cisco.ios.ios
+ansible_user=admin
+ansible_password=cisco123
+ansible_become=yes
+ansible_become_method=enable
+ansible_become_password=cisco123
+```
+
+---
+
+# . Run Ansible Command
+
+Run Cisco command using Ansible:
+
+```bash
+ansible -i host.ini cisco -m ios_command -a "commands='show version'"
+```
+
+---
+
