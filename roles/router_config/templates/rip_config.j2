@@ -1,0 +1,17 @@
+{% if inventory_hostname == 'R1' %}
+router rip
+ version {{ rip_version }}
+ {% if rip_no_auto_summary %}
+ no auto-summary
+ {% endif %}
+ network 192.168.10.0
+ network 192.168.15.0
+{% elif inventory_hostname == 'R2' %}
+router rip
+ version {{ rip_version }}
+ {% if rip_no_auto_summary %}
+ no auto-summary
+ {% endif %}
+ network 192.168.11.0
+ network 192.168.15.0
+{% endif %}

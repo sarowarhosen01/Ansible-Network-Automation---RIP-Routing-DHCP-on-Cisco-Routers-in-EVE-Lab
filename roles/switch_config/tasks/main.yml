@@ -1,0 +1,44 @@
+---
+- name: Configure hostname
+  cisco.ios.ios_config:
+    lines:
+      - hostname {{ inventory_hostname }}
+
+- name: Create VLANs
+  cisco.ios.ios_vlans:
+    config: "{{ vlans }}"
+    state: merged
+
+# ===================== TRUNK =====================
+- name: Configure trunk ports
+  cisco.ios.ios_config:
+    parents: "interface {{ item.name }}"
+    lines:
+      - switchport trunk encapsulation dot1q
+      - switchport mode trunk
+      - switchport trunk allowed vlan {{ item.allowed_vlans }}
+      - switchport trunk native vlan {{ item.trunk_native_vlan }}
+      - description {{ item.description }}
+      - no shutdown
+  loop: "{{ switch_interfaces | selectattr('mode', 'equalto', 'trunk') | list }}"
+
+# ===================== ACCESS =====================
+- name: Configure access ports
+  cisco.ios.ios_config:
+    parents: "interface {{ item.name }}"
+    lines:
+      - switchport mode access
+      - switchport access vlan {{ item.access_vlan }}
+      - description {{ item.description }}
+      - no shutdown
+  loop: "{{ switch_interfaces | selectattr('mode', 'equalto', 'access') | list }}"
+
+- name: Enable spanning-tree
+  cisco.ios.ios_config:
+    lines:
+      - spanning-tree mode rapid-pvst
+
+- name: Save configuration
+  cisco.ios.ios_command:
+    commands:
+      - write memory

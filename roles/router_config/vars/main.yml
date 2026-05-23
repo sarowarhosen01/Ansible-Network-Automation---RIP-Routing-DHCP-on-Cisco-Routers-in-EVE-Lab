@@ -1,0 +1,105 @@
+# roles/router_config/vars/main.yml
+---
+# -------------------------
+# INTERFACES
+# -------------------------
+r1_interfaces:
+  - name: GigabitEthernet0/0
+    description: TRUNK_TO_SWITCH
+  - name: GigabitEthernet0/1
+    ip_address: 192.168.15.1
+    subnet_mask: 255.255.255.0
+    description: CONNECTION_TO_R2
+
+r2_interfaces:
+  - name: GigabitEthernet0/0
+    description: TRUNK_TO_SWITCH
+  - name: GigabitEthernet0/1
+    ip_address: 192.168.15.2
+    subnet_mask: 255.255.255.0
+    description: CONNECTION_TO_R1
+
+
+# -------------------------
+# VLAN SUBINTERFACES (CORRECT)
+# -------------------------
+r1_vlan_subinterfaces:
+  - vlan_id: 10
+    name: IT
+    ip_address: 192.168.10.1
+    subnet_mask: 255.255.255.240
+  - vlan_id: 20
+    name: HR
+    ip_address: 192.168.10.17
+    subnet_mask: 255.255.255.240
+  - vlan_id: 30
+    name: FINANCE
+    ip_address: 192.168.10.33
+    subnet_mask: 255.255.255.240
+  - vlan_id: 40
+    name: HUMAN_RESOURCE
+    ip_address: 192.168.10.49
+    subnet_mask: 255.255.255.240
+  - vlan_id: 50
+    name: WIFI
+    ip_address: 192.168.10.65
+    subnet_mask: 255.255.255.240
+
+
+r2_vlan_subinterfaces:
+  - vlan_id: 10
+    name: IT
+    ip_address: 192.168.11.1
+    subnet_mask: 255.255.255.240
+  - vlan_id: 20
+    name: HR
+    ip_address: 192.168.11.17
+    subnet_mask: 255.255.255.240
+  - vlan_id: 30
+    name: FINANCE
+    ip_address: 192.168.11.33
+    subnet_mask: 255.255.255.240
+  - vlan_id: 40
+    name: HUMAN_RESOURCE
+    ip_address: 192.168.11.49
+    subnet_mask: 255.255.255.240
+  - vlan_id: 50
+    name: WIFI
+    ip_address: 192.168.11.65
+    subnet_mask: 255.255.255.240
+
+
+# -------------------------
+# DHCP (UNCHANGED BUT SAFE)
+# -------------------------
+r1_dhcp_pools:
+  - name: VLAN10_IT_POOL
+    network: 192.168.10.0
+    subnet_mask: 255.255.255.240
+    default_router: 192.168.10.1
+    dns_servers: [8.8.8.8, 8.8.4.4]
+    start_ip: 192.168.10.5
+    end_ip: 192.168.10.14
+    lease_days: 7
+
+r2_dhcp_pools:
+  - name: VLAN10_IT_POOL
+    network: 192.168.11.0
+    subnet_mask: 255.255.255.240
+    default_router: 192.168.11.1
+    dns_servers: [8.8.8.8, 8.8.4.4]
+    start_ip: 192.168.11.5
+    end_ip: 192.168.11.14
+    lease_days: 7
+
+
+# -------------------------
+# RIP
+# -------------------------
+rip_networks:
+  - 192.168.10.0
+  - 192.168.11.0
+  - 192.168.15.0
+
+rip_version: 2
+rip_no_auto_summary: true

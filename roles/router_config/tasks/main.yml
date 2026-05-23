@@ -1,0 +1,85 @@
+# roles/router_config/tasks/main.yml
+---
+# -------------------------
+# HOSTNAME
+# -------------------------
+- name: Configure hostname
+  cisco.ios.ios_config:
+    lines:
+      - hostname {{ inventory_hostname }}
+
+# -------------------------
+# INTERFACES (NO IP ON PHYSICAL)
+# -------------------------
+- name: Configure interfaces (no IP on trunk)
+  cisco.ios.ios_config:
+    parents: "interface {{ item.name }}"
+    lines:
+      - description {{ item.description }}
+      - no ip address
+      - no shutdown
+  loop: "{{ (inventory_hostname == 'R1') | ternary(r1_interfaces, r2_interfaces) }}"
+
+
+# -------------------------
+# VLAN SUBINTERFACES
+# -------------------------
+- name: Configure VLAN subinterfaces
+  cisco.ios.ios_config:
+    parents: "interface GigabitEthernet0/0.{{ item.vlan_id }}"
+    lines:
+      - encapsulation dot1Q {{ item.vlan_id }}
+      - ip address {{ item.ip_address }} {{ item.subnet_mask }}
+      - description VLAN_{{ item.vlan_id }}_{{ item.name }}
+      - no shutdown
+  loop: "{{ (inventory_hostname == 'R1') | ternary(r1_vlan_subinterfaces, r2_vlan_subinterfaces) }}"
+
+
+# -------------------------
+# DHCP EXCLUDED ADDRESSES
+# -------------------------
+- name: Configure DHCP excluded addresses
+  cisco.ios.ios_config:
+    lines:
+      - ip dhcp excluded-address {{ item.start_ip }} {{ item.end_ip }}
+  loop: "{{ (inventory_hostname == 'R1') | ternary(r1_dhcp_pools, r2_dhcp_pools) }}"
+
+
+# -------------------------
+# DHCP POOLS
+# -------------------------
+- name: Configure DHCP pools
+  cisco.ios.ios_config:
+    parents: "ip dhcp pool {{ item.name }}"
+    lines:
+      - network {{ item.network }} {{ item.subnet_mask }}
+      - default-router {{ item.default_router }}
+      - dns-server {{ item.dns_servers | join(' ') }}
+      - lease {{ item.lease_days }}
+  loop: "{{ (inventory_hostname == 'R1') | ternary(r1_dhcp_pools, r2_dhcp_pools) }}"
+
+
+# -------------------------
+# RIP CONFIG (FIXED - NO TEMPLATE FILE)
+# -------------------------
+- name: Configure RIP routing
+  cisco.ios.ios_config:
+    lines:
+      - router rip
+      - version {{ rip_version }}
+      - no auto-summary
+
+- name: Add RIP networks
+  cisco.ios.ios_config:
+    parents: router rip
+    lines:
+      - network {{ item }}
+  loop: "{{ rip_networks }}"
+
+
+# -------------------------
+# SAVE CONFIG
+# -------------------------
+- name: Save configuration
+  cisco.ios.ios_config:
+    save_when: always
